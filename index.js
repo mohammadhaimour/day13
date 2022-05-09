@@ -27,9 +27,11 @@ app.use(bodyParser.json())
 // or 
 // app.use(express.json());
 
-// routes:
+// routes:CRUD
 app.post("/addRecipe", handleAdd);
 app.get("/getRecipes", handleGet);
+app.put("/updateRecipe/:recipeName", handleUpdate)    // UPDATE with params
+app.delete("/deleteRecipe", handleDelete)   // DELETE with quey
 app.use(handleError);
 
 
@@ -58,15 +60,51 @@ function handleGet(req, res) {
 
     let sql = 'SELECT * from recipe;'
     client.query(sql).then((result) => {
-        console.log(result);
+        // console.log(result);
         res.json(result.rows);
     }).catch((err) => {
         handleError(err, req, res);
     });
 }
 
+function handleUpdate(req, res) {
+    const { recipeName } = req.params;
+    const { title, time, summary, image } = req.body;
+
+    let sql = `UPDATE recipe SET title = $1, time = $2, summary = $3, image = $4 WHERE title = $5 RETURNING *;`
+    let values = [title, time, summary, image, recipeName];
+
+    client.query(sql, values).then(result => {
+        // console.log(result.rows);
+        // res.send("working");
+        res.json(result.rows[0]);
+    }
+
+    ).catch();
+
+}
+
+// http://localhost:3001/deleteRecipe?recipeName=test
+function handleDelete(req, res) {
+    const { recipeName } = req.query
+    console.log(recipeName);
+    let sql = 'DELETE FROM recipe WHERE title=$1;'
+    let value = [recipeName];
+    client.query(sql, value).then(result => {
+        console.log(result);
+        res.send("deleted");
+    }
+    ).catch(error => {
+        console.log(111111111111111111111, error);
+    })
+}
+
+
+
+
 function handleError(error, req, res) {
     res.status(500).send(error)
+
 }
 
 
